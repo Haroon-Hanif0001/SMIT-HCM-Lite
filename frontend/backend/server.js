@@ -1,3 +1,4 @@
+
 require("dotenv").config();
 
 const Employee = require("./models/Employee");
@@ -11,6 +12,7 @@ const Company = require("./models/Company");
 const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
+
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
@@ -40,7 +42,6 @@ function verifyToken(req, res, next) {
     });
   }
 }
-
 
 // Home route
 app.get("/", (req, res) => {
@@ -79,7 +80,12 @@ app.post("/api/setup", async (req, res) => {
       });
     }
 
-    // Do not create another initial Admin.
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        message: "Authentication is not configured",
+      });
+    }
+
     const existingAdmin = await User.findOne({ role: "admin" });
 
     if (existingAdmin) {
@@ -148,12 +154,11 @@ app.post("/api/setup", async (req, res) => {
         },
       });
     } catch (error) {
-      // Roll back the Admin if company creation fails.
       await User.deleteOne({ _id: admin._id });
       throw error;
     }
   } catch (error) {
-    console.error("Gemini error:", error);
+    console.error("Setup error:", error);
 
     return res.status(500).json({
       message: "Setup failed",
@@ -178,6 +183,12 @@ app.post("/api/signup", async (req, res) => {
       });
     }
 
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({
+        message: "Authentication is not configured",
+      });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
 
     const existingUser = await User.findOne({
@@ -192,8 +203,6 @@ app.post("/api/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Public signup can never choose the Admin or HR role.
-    // The User model's default role is employee.
     const newUser = new User({
       name: name.trim(),
       email: normalizedEmail,
@@ -203,9 +212,30 @@ app.post("/api/signup", async (req, res) => {
 
     await newUser.save();
 
+    const token = jwt.sign(
+      {
+        id: newUser._id.toString(),
+        role: newUser.role,
+        companyId: newUser.companyId
+          ? newUser.companyId.toString()
+          : null,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     return res.status(201).json({
       message: "Signup successful!",
+      token,
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        companyId: newUser.companyId || null,
+      },
     });
+
   } catch (error) {
     console.error("Signup error:", error.message);
 
@@ -294,7 +324,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-
+// Add Employee API
 app.post("/api/employees", verifyToken, async (req, res) => {
   try {
     if (!["admin", "hr"].includes(req.user.role)) {
@@ -307,7 +337,8 @@ app.post("/api/employees", verifyToken, async (req, res) => {
 
     if (
       !name || !email || !department ||
-      !position || salary === undefined || salary === null || salary === ""
+      !position || salary === undefined ||
+      salary === null || salary === ""
     ) {
       return res.status(400).json({
         message: "Please fill all employee fields",
@@ -360,7 +391,7 @@ app.post("/api/ai", async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       contents: `You are HCM Lite, a helpful HR management assistant.
 Help users with employee management, attendance, leave policies, and payroll.
 Only use information provided in the conversation. Never claim to have accessed company records unless they were actually provided.
@@ -391,9 +422,12 @@ async function startServer() {
 
     console.log("MongoDB connected successfully!");
 
-    app.listen(5000, () => {
-      console.log("HCM Lite backend is running on port 5000");
+    const PORT = process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+      console.log(`HCM Lite backend is running on port ${PORT}`);
     });
+
   } catch (error) {
     console.error("Backend startup error:", error.message);
   }

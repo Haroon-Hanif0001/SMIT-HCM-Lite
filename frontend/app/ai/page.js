@@ -9,6 +9,7 @@ export default function AIPage() {
 
   async function sendMessage(e) {
     e.preventDefault();
+console.log("SEND BUTTON CLICKED");
 
     if (!message.trim() || loading) return;
 
@@ -23,6 +24,7 @@ export default function AIPage() {
     setLoading(true);
 
     try {
+      console.log("SENDING REQUEST TO BACKEND");
       const response = await fetch("http://localhost:5000/api/ai", {
         method: "POST",
         headers: {
