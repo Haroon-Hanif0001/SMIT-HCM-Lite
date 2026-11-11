@@ -1,14 +1,14 @@
 
 require("dotenv").config();
 
-const Employee = require("./models/Employee");
+const Employee = require("./models/employee");
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const User = require("./models/User");
-const Company = require("./models/Company");
+const User = require("./models/user");
+const Company = require("./models/company");
 const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
