@@ -411,15 +411,10 @@ User question: ${message}`,
   }
 });
 
-// Start backend after connecting to MongoDB
+// Start backend locally
 async function startServer() {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is missing from backend .env");
-    }
-
     await mongoose.connect(process.env.MONGO_URI);
-
     console.log("MongoDB connected successfully!");
 
     const PORT = process.env.PORT || 5000;
@@ -427,10 +422,28 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`HCM Lite backend is running on port ${PORT}`);
     });
-
   } catch (error) {
-    console.error("Backend startup error:", error.message);
+    console.error("Backend startup error:", error);
   }
 }
 
-startServer();
+// Local development
+if (require.main === module) {
+  startServer();
+}
+
+// Vercel serverless handler
+module.exports = async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await mongoose.connect(process.env.MONGO_URI);
+    }
+
+    return app(req, res);
+  } catch (error) {
+    console.error("Vercel backend error:", error);
+    return res.status(500).json({
+      message: "Backend database connection failed",
+    });
+  }
+};
