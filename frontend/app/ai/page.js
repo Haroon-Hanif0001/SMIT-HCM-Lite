@@ -25,7 +25,7 @@ console.log("SEND BUTTON CLICKED");
 
     try {
       console.log("SENDING REQUEST TO BACKEND");
-      const response = await fetch("http://localhost:5000/api/ai", {
+      const response = await fetch("http://https://smit-hcm-lite-backend.vercel.app/api/ai", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
