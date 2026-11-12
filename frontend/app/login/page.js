@@ -17,7 +17,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://https://smit-hcm-lite-backend.vercel.app/api/login", {
+      const response = await fetch("http://smit-hcm-lite-backend.vercel.app/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
