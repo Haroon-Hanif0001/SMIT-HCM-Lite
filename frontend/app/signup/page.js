@@ -31,7 +31,7 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://https://smit-hcm-lite-backend.vercel.app/api/signup", {
+      const response = await fetch("https://smit-hcm-lite-backend.vercel.app/api/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

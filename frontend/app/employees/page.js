@@ -26,7 +26,7 @@ export default function EmployeesPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("http://https://smit-hcm-lite-backend.vercel.app/api/employees", {
+      const response = await fetch("https://smit-hcm-lite-backend.vercel.app/api/employees", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
